@@ -154,101 +154,110 @@ module duplo_to_brio()
     }
 }
 
-duplo_to_brio();
+*duplo_to_brio();
 
-angle = 30; // °
+//angle = 30; // °
 // Length of the piece should be about 1 Duplo brick, 63.8mm.
 // angle/360 * C = 63.8mm
-C = 63.8 * 360 / angle;
-echo ("C", C);
+//C = 63.8 * 360 / angle;
+//echo ("C", C);
 // C = 2 * PI * r
 // r = C / 2 / PI
 //r = C / 2 / PI;
-r = 63.8 / sin(angle);
-echo (r);
+//r = 63.8 / sin(angle);
+//echo (r);
 
-difference() {
-    rotate_extrude(angle = angle, $fn=200)
-    translate([r, 0, 0]) union() {
+ledge_slot = 6;
+ledge_peg = 18;
+ledge_depth = 12-7;
 
-        difference() {
-            translate([0, -20, 0]) square([12, 40]);
+slope = 1/6;
+w = 63.8 - ledge_slot - ledge_peg;
+h = w*slope;
+echo("h", h);
+r = (w*w+h*h)/(2*h);
+echo("r", r);
 
-            // Rail slots
-            translate([12-3.495, -2.5-12.5, 0])
-                square([3.5, 5]);
-            translate([12-3.495, -2.5+12.5, 0])
-                square([3.5, 5]);
-
-            // Rail chamfers
-            translate([12.5, 10.5, 0])
-            rotate(56, [0, 0, 1])
-            square([4, 4], center=true);
-            translate([12.5, 14.5, 0])
-            rotate(-56, [0, 0, 1])
-            square([4, 4], center=true);
-
-            translate([12.5, -14.5, 0])
-            rotate(56, [0, 0, 1])
-            square([4, 4], center=true);
-            translate([12.5, -10.5, 0])
-            rotate(-56, [0, 0, 1])
-            square([4, 4], center=true);
-        }
-    }
-
-    // Female connector
-    translate([r+11, 0, 0]) union() {
-        // End space
-        cube([20, 21, 41], center = true);
-
-        // Slot
-        translate([0, 9, 0])
-            cube([20, 20, 7], center = true);
-
-        // Hole
-        translate([0, 18, 0])
-            rotate([0, 90, 0])
-                cylinder(r = 6.5, h = 20, center = true, $fn = resolution);
-    }
-
-    // Male connector end space
-    rotate(angle, [0, 0, 1])
-    translate([r+11, 0, 0])
-    cube([20, 41, 41], center = true);
-}
+angle = acos((r-h) / r);
+echo("angle", angle);
+C = w * 360 / angle;
 
 intersection() {
-    union() {
-        peg_diam = 6.5;
-        angle_cyl = (63.8-peg_diam) / C * 360;
-
-        // Peg connector
-        rotate(angle_cyl, [0, 0, 1])
-        translate([r+11, 0, 0])
+    difference() {
         union() {
+            translate([0, 0, -r+h+1])
+            rotate([0, 0, -90])
+            rotate([0, -90, 0])
+            rotate_extrude(angle = angle, $fn=200)
+            translate([r, 0, 0]) union() {
+
+                difference() {
+                    translate([-8, -20, 0]) square([20, 40]);
+
+                    // Rail slots
+                    translate([12-3.495, -2.5-12.5, 0])
+                        square([3.5, 5]);
+                    translate([12-3.495, -2.5+12.5, 0])
+                        square([3.5, 5]);
+
+                    // Rail chamfers
+                    translate([12.5, 10.5, 0])
+                    rotate(56, [0, 0, 1])
+                    square([4, 4], center=true);
+                    translate([12.5, 14.5, 0])
+                    rotate(-56, [0, 0, 1])
+                    square([4, 4], center=true);
+
+                    translate([12.5, -14.5, 0])
+                    rotate(56, [0, 0, 1])
+                    square([4, 4], center=true);
+                    translate([12.5, -10.5, 0])
+                    rotate(-56, [0, 0, 1])
+                    square([4, 4], center=true);
+                }
+            }
+            
+            translate([-ledge_slot, -20, -20+ledge_depth+h+1]) cube([ledge_slot, 40, 20]);
+
+            translate([0, -20, -r+h+1])
+            rotate([0, angle, 0])
+            translate([0, 0, -10+ledge_depth+r]) cube([ledge_peg, 40, 10]);
+        }
+
+        // Slot connector
+        translate([0, 0, 0]) union() {
+            // End space
+            //cube([20, 21, 41], center = true);
+
             // Slot
-            translate([0, -10, 0])
-                cube([20, 20, 7], center = true);
+            translate([0, 0, h+10])
+                cube([20, 7, 9], center = true);
 
             // Hole
-            rotate([0, 90, 0])
-                cylinder(r = 6.5, h = 20, center = true, $fn = resolution);
+            translate([12, 0, h+8])
+                //rotate([0, 90, 0])
+                    cylinder(r = 6.5, h = 7*2, center = true, $fn = resolution);
         }
     }
-    cylinder(r=r+12.05, h=40, $fn=200, center=true);
+    translate([-100, -100, 0]) cube([200, 200, 200]);
 }
 
-d = r - r * cos(angle);
-intersection() {
-    union() {
-        translate([r-d/2, 63.8/2, 0]) cube([d, 63.8, 40], center = true);
-    }
-    cylinder(r=r+0.05, h=40, $fn=100, center=true);
+// Peg connector
+translate([0, 0, -r+8])
+rotate([0, angle, 0])
+translate([0, 0, r+7])
+union() {
+    // Slot
+    //translate([0, -10, 0])
+        cube([20, 7, 7], center = true);
+
+    // Hole
+    translate([12, 0, 0])
+        cylinder(r = 6.5, h = 7, center = true, $fn = resolution);
 }
 
-translate([r-d, 63.8/2, 0])
-rotate([90, 0, 90]) union() {
+translate([w/2+ledge_slot, 0, 0])
+union() {
     difference() {
        translate([0, 0, -5]) cube([63.8, 40, 10], center = true);
         translate([0, 0, -6.55]) cube([63.8-3, 31.7-3, 7], center = true);
